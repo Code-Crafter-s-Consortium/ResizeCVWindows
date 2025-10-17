@@ -1,0 +1,2 @@
+"C:\MinGW\bin\windres.exe" "resources\resource.rc" -o "resources\resource.o" -O coff
+"C:\MinGW\bin\gcc.exe" "src\main.c" "resources\resource.o" -o "output\Resize CV Windows.exe" -mwindows -Wall -Wextra -g3
