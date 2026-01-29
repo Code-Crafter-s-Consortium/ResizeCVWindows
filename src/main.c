@@ -13,38 +13,13 @@
 static NOTIFYICONDATA nid;
 static HWND mainWindow;
 
-/**
- * Function handles the creation and destruction of windows. 
- * Registered with a windows event hook.
- */
 void CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
-
-/**
- * This function handles the messgaes for the tray icon.
- */
 LRESULT CALLBACK WinWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-/**
- * Creates the main window instance. The window is not visible, but is neccessary for the messaging process.
- */
-void initialize_main_window(HINSTANCE instance);
-
-/**
- * Creates an icon in the tray.
- */
-void initialize_tray(HINSTANCE instance);
-
-/**
- * Print out a window tree for debugging.
- */
+static void initialize_main_window(HINSTANCE instance);
+static void initialize_tray(HINSTANCE instance);
 BOOL CALLBACK print_window(HWND hwnd, LPARAM lparam);
 
-void print_window_details(HWND hwnd);
 
-
-/**
- * Main entry point for the application.
- */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     initialize_main_window(hInstance);
@@ -76,14 +51,14 @@ void CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, 
     char windowTitle[32], windowClass[32];
     GetClassName(hwnd, windowClass, sizeof(windowClass));
     GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
-    if (strcmp(windowTitle, "Drawing Sheets") == 0)
+    if (!strcmp(windowTitle, "Drawing Sheets"))
         resize_drawing_sheets_window(hwnd, event);
     else if (!strcmp(windowTitle, "Select Tools"))
-        resize_tool_selection_window(hwnd, event);
+        resize_tool_selection_window(hwnd);
     else if (!strcmp(windowTitle, "Tool"))
-        print_window(hwnd, 0);
+        resize_tool_selection_sub_window(hwnd);
 
-    //printf("Window Title: %s; Window Class: %s\n", windowTitle, windowClass);
+    //print_window_details(hwnd);
 }
 
 LRESULT CALLBACK WinWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -118,7 +93,7 @@ LRESULT CALLBACK WinWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
     return 0;
 }
 
-void initialize_main_window(HINSTANCE instance)
+static void initialize_main_window(HINSTANCE instance)
 {
     // Register the window class.
     // We have to create a window class so we can process messgaes with our tray icon.
@@ -132,7 +107,8 @@ void initialize_main_window(HINSTANCE instance)
         WS_OVERLAPPEDWINDOW, 800, 600, 300, 200, NULL, NULL, instance, NULL);
 }
 
-void initialize_tray(HINSTANCE instance)
+// Initialize the tray.
+static void initialize_tray(HINSTANCE instance)
 {
     // Create and show the system tray icon.
     nid.hIcon = LoadIcon(instance, MAKEINTRESOURCE(SMALL_ICON));
@@ -143,49 +119,4 @@ void initialize_tray(HINSTANCE instance)
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     lstrcpy(nid.szTip, TEXT("Resize CV Windows"));
     Shell_NotifyIcon(NIM_ADD, &nid);
-}
-
-BOOL CALLBACK print_window(HWND hwnd, LPARAM lparam)
-{
-    int indent = (int)lparam;
-    if (indent == 0)
-        printf("\n\n\n\n\n\n\n");
-
-    char className[32], windowTitle[32];
-    GetClassName(hwnd, className, sizeof(className));
-    GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
-
-    // build padding
-    char pad[64];
-    int i = 0;
-    while (i < indent * 4)
-    {
-        pad[i++] = ' ';
-        pad[i++] = ' ';
-        pad[i++] = ' ';
-        pad[i++] = ' ';
-    }
-    pad[i] = 0; // null terminate
-
-    RECT r;
-    GetWindowRect(hwnd, &r);
-
-    printf("%sHwnd: %ld, Window Name: %s, Window Class: %s; X = %ld, Y = %ld, W = %ld, H = %ld\n\n"
-        , pad, hwnd, windowTitle, className, r.left, r.top, (r.right - r.left), (r.bottom - r.top));
-
-    EnumChildWindows(hwnd, print_window, indent + 1);
-
-    return true;
-}
-
-
-void print_window_details(HWND hwnd)
-{
-    char className[32], windowTitle[32];
-    GetClassName(hwnd, className, sizeof(className));
-    GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
-    RECT r;
-    GetWindowRect(hwnd, &r);
-    printf("Hwnd: %ld, Window Name: %s, Window Class: %s; X = %ld, Y = %ld, W = %ld, H = %ld\n\n"
-        , hwnd, windowTitle, className, r.left, r.top, (r.right - r.left), (r.bottom - r.top));
 }

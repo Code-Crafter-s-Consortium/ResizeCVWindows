@@ -2,23 +2,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-/**
- * Main function to resize the drawing sheets window.
- * Takes the handle as an argument, and also the event to track creation and deletion.
- */
 void resize_drawing_sheets_window(HWND hwnd, DWORD event);
-
-/**
- * Callback function that moves and resizes the controls within the window.
- * Iterates over the list box and buttons moving and resizing.
- */
 BOOL CALLBACK move_drawing_sheets_controls(HWND hwnd, LPARAM lParam);
-
-/**
- * Function returns the Y position for each button based on it's name.
- */
 int get_drawing_sheets_button_positions(const char* title);
-
 
 void resize_drawing_sheets_window(HWND hwnd, DWORD event)
 {
@@ -53,14 +39,13 @@ BOOL CALLBACK move_drawing_sheets_controls(HWND hwnd, LPARAM lParam)
 {
     char className[32];
     GetClassNameA(hwnd, className, sizeof(className));
-    if (strcmp(className, "Button") == 0)
+    if (!strcmp(className, "Button"))
     {
         char windowTitle[32];
         GetWindowTextA(hwnd, windowTitle, sizeof(windowTitle));
-        printf("Button found: %s\n", windowTitle);
         SetWindowPos(hwnd, NULL, 460, get_drawing_sheets_button_positions(windowTitle), 120, 40, SWP_SHOWWINDOW);
     }
-    if (strcmp(className, "ListBox") == 0)
+    if (!strcmp(className, "ListBox"))
     {
         SetWindowPos(hwnd, NULL, 5, 5, 450, 650, SWP_SHOWWINDOW);
     }
@@ -83,5 +68,6 @@ int get_drawing_sheets_button_positions(const char* title)
         return 285;
     else if (strcmp(title, "Close") == 0)
         return 614;
+    return 0; // we shouldn't end up here
 }
 

@@ -1,6 +1,9 @@
 
 # Resize Windows in CABINET VISION.
 
+This is an application to resize some of the terribly cramped windows in CABINET VISION.  
+Currently supported is the drawing sheets window, and the tool selection window in the CAM editor.
+
 ## Compiling
 
 You will need a C compiler such as gcc. Get the gcc tool chain here: [MinGW](https://sourceforge.net/projects/mingw/)
