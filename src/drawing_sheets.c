@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-int screenWidth;
-int screenHeight;
-
 /**
  * Main function to resize the drawing sheets window.
  * Takes the handle as an argument, and also the event to track creation and deletion.
@@ -34,8 +31,8 @@ void resize_drawing_sheets_window(HWND hwnd, DWORD event)
         if (!isMainOpened)
         {
             SetWindowPos(hwnd, NULL,
-                (screenWidth - 600) / 2,
-                (screenHeight - 700) / 2,
+                (GetSystemMetrics(SM_CXSCREEN) - 600) / 2,
+                (GetSystemMetrics(SM_CYSCREEN) - 700) / 2,
                 600, 700,
                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
             EnumChildWindows(hwnd, move_drawing_sheets_controls, 0); // Move controls within the window

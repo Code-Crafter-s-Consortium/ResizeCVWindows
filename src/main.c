@@ -3,6 +3,7 @@
 #include <shellapi.h>
 #include <stdbool.h>
 #include "drawing_sheets.c"
+#include "tool_selection.c"
 #include "..\resources\resource.h"
 
 #define WM_TRAYICON (WM_USER + 1)
@@ -34,10 +35,12 @@ void initialize_main_window(HINSTANCE instance);
 void initialize_tray(HINSTANCE instance);
 
 /**
- * Initializes the screen dimensions.
- * If the dimensions cannot be retrieved, it defaults to 1920x1080.
+ * Print out a window tree for debugging.
  */
-void initilizeScreenDimensions();
+BOOL CALLBACK print_window(HWND hwnd, LPARAM lparam);
+
+void print_window_details(HWND hwnd);
+
 
 /**
  * Main entry point for the application.
@@ -46,10 +49,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
     initialize_main_window(hInstance);
     initialize_tray(hInstance);
-    initilizeScreenDimensions();
 
     // Create a hook to listen for window creation and destruction events.
-    HWINEVENTHOOK hook = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, NULL, WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+    HWINEVENTHOOK hook = SetWinEventHook(EVENT_MIN, EVENT_MAX, NULL, WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
     if (hook == NULL)
         return 1;
 
@@ -67,12 +69,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 void CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime)
 {
-    char windowTitle[32];
-    GetWindowTextA(hwnd, windowTitle, sizeof(windowTitle));
+    if (event != EVENT_OBJECT_CREATE && event != EVENT_OBJECT_DESTROY && event != EVENT_OBJECT_NAMECHANGE)
+        return;
+    if (idObject != OBJID_WINDOW)
+        return;
+    char windowTitle[32], windowClass[32];
+    GetClassName(hwnd, windowClass, sizeof(windowClass));
+    GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
     if (strcmp(windowTitle, "Drawing Sheets") == 0)
         resize_drawing_sheets_window(hwnd, event);
+    else if (!strcmp(windowTitle, "Select Tools"))
+        resize_tool_selection_window(hwnd, event);
+    else if (!strcmp(windowTitle, "Tool"))
+        print_window(hwnd, 0);
 
-    printf("Window Title: %s\n", windowTitle);
+    //printf("Window Title: %s; Window Class: %s\n", windowTitle, windowClass);
 }
 
 LRESULT CALLBACK WinWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -134,13 +145,47 @@ void initialize_tray(HINSTANCE instance)
     Shell_NotifyIcon(NIM_ADD, &nid);
 }
 
-void initilizeScreenDimensions()
+BOOL CALLBACK print_window(HWND hwnd, LPARAM lparam)
 {
-    screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    if (!screenWidth || !screenHeight)
+    int indent = (int)lparam;
+    if (indent == 0)
+        printf("\n\n\n\n\n\n\n");
+
+    char className[32], windowTitle[32];
+    GetClassName(hwnd, className, sizeof(className));
+    GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
+
+    // build padding
+    char pad[64];
+    int i = 0;
+    while (i < indent * 4)
     {
-        screenWidth = 1920;
-        screenHeight = 1080;
+        pad[i++] = ' ';
+        pad[i++] = ' ';
+        pad[i++] = ' ';
+        pad[i++] = ' ';
     }
+    pad[i] = 0; // null terminate
+
+    RECT r;
+    GetWindowRect(hwnd, &r);
+
+    printf("%sHwnd: %ld, Window Name: %s, Window Class: %s; X = %ld, Y = %ld, W = %ld, H = %ld\n\n"
+        , pad, hwnd, windowTitle, className, r.left, r.top, (r.right - r.left), (r.bottom - r.top));
+
+    EnumChildWindows(hwnd, print_window, indent + 1);
+
+    return true;
+}
+
+
+void print_window_details(HWND hwnd)
+{
+    char className[32], windowTitle[32];
+    GetClassName(hwnd, className, sizeof(className));
+    GetWindowText(hwnd, windowTitle, sizeof(windowTitle));
+    RECT r;
+    GetWindowRect(hwnd, &r);
+    printf("Hwnd: %ld, Window Name: %s, Window Class: %s; X = %ld, Y = %ld, W = %ld, H = %ld\n\n"
+        , hwnd, windowTitle, className, r.left, r.top, (r.right - r.left), (r.bottom - r.top));
 }
